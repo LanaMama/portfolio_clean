@@ -1,152 +1,212 @@
-document.addEventListener('DOMContentLoaded', () => {
+const portfolioPrev = document.querySelector('.portfolio__arrow_prev');
+const portfolioNext = document.querySelector('.portfolio__arrow_next');
+const portfolioNumber = document.querySelector('.portfolio__pagination-number');
+const portfolioProgress = document.querySelector('.portfolio__pagination-progress');
+const partnersNumber = document.querySelector('.partners__pagination-number');
+const partnersProgress = document.querySelector('.partners__pagination-progress');
 
-    // =========================================
-    // BURGER MENU
-    // =========================================
+function getSlidesPerView(swiper) {
+    const slidesPerView = swiper.params.slidesPerView;
+    return typeof slidesPerView === 'number' && slidesPerView > 0 ? slidesPerView : 1;
+}
 
-    const burger = document.querySelector('.header__burger');
-    const menu = document.querySelector('.mobile-menu');
-    const menuClose = document.querySelector('.mobile-menu__close');
+function getCurrentPage(swiper) {
+    const slidesPerView = getSlidesPerView(swiper);
+    return Math.min(Math.ceil((swiper.realIndex + 1) / slidesPerView), getTotalPages(swiper));
+}
 
-    function openMenu() {
-        menu.classList.add('active');
-        document.body.style.overflow = 'hidden';
+function getTotalPages(swiper) {
+    const slidesPerView = getSlidesPerView(swiper);
+    return Math.max(1, Math.ceil(swiper.slides.length / slidesPerView));
+}
+
+function updatePortfolioPagination(swiper) {
+    const current = getCurrentPage(swiper);
+    const total = getTotalPages(swiper);
+
+    if (portfolioNumber) {
+        portfolioNumber.textContent = `${String(current).padStart(2, '0')}/${String(total).padStart(2, '0')}`;
     }
 
-    function closeMenu() {
-        menu.classList.remove('active');
-        document.body.style.overflow = '';
+    if (portfolioProgress) {
+        const progress = total > 0 ? (current / total) * 100 : 100;
+        portfolioProgress.style.width = `${progress}%`;
+    }
+}
+
+if (typeof Swiper !== 'undefined') {
+    const portfolioSwiper = new Swiper('.portfolio__track', {
+        slidesPerView: 1,
+        spaceBetween: 16,
+        slidesPerGroup: 1,
+        speed: 600,
+        observer: true,
+        observeParents: true,
+        navigation: {
+            nextEl: '.portfolio__arrow_next',
+            prevEl: '.portfolio__arrow_prev',
+        },
+        breakpoints: {
+            425: {
+                slidesPerView: 1,
+                spaceBetween: 16,
+            },
+            768: {
+                slidesPerView: 1.5,
+                spaceBetween: 16,
+            },
+            1024: {
+                slidesPerView: 2,
+                spaceBetween: 24,
+            },
+            1440: {
+                slidesPerView: 2.5,
+                spaceBetween: 24,
+            },
+            1920: {
+                slidesPerView: 3,
+                spaceBetween: 24,
+            },
+        },
+        on: {
+            init() {
+                this.update();
+                updatePortfolioPagination(this);
+            },
+            slideChange() {
+                updatePortfolioPagination(this);
+            },
+            resize() {
+                updatePortfolioPagination(this);
+            },
+        },
+    });
+
+    function updatePartnersPagination(swiper) {
+        const current = getCurrentPage(swiper);
+        const total = getTotalPages(swiper);
+
+        if (partnersNumber) {
+            partnersNumber.textContent = `${String(current).padStart(2, '0')}/${String(total).padStart(2, '0')}`;
+        }
+
+        if (partnersProgress) {
+            const progress = total > 0 ? (current / total) * 100 : 100;
+            partnersProgress.style.width = `${progress}%`;
+        }
     }
 
-    burger?.addEventListener('click', openMenu);
-    menuClose?.addEventListener('click', closeMenu);
+    const partnersSwiper = new Swiper('.partners__track', {
+        slidesPerView: 1,
+        spaceBetween: 16,
+        speed: 600,
+        observer: true,
+        observeParents: true,
+        navigation: {
+            nextEl: '.partners__arrow_next',
+            prevEl: '.partners__arrow_prev',
+        },
+        on: {
+            init() {
+                this.update();
+                updatePartnersPagination(this);
+            },
+            slideChange() {
+                updatePartnersPagination(this);
+            },
+            resize() {
+                updatePartnersPagination(this);
+            },
+        },
+    });
+}
 
-    // Закрытие по клику на ссылку меню
-    document.querySelectorAll('.mobile-menu__link').forEach(link => {
+
+const faqItems = document.querySelectorAll('.faq-item');
+
+if (faqItems.length) {
+    faqItems.forEach((item) => {
+        const button = item.querySelector('.faq-item__header');
+        const content = item.querySelector('.faq-item__content');
+
+        if (!button || !content) return;
+
+        content.style.height = '0px';
+
+        button.addEventListener('click', () => {
+            const isOpen = item.classList.contains('faq-item_active');
+
+            if (isOpen) {
+                content.style.height = `${content.scrollHeight}px`;
+
+                requestAnimationFrame(() => {
+                    item.classList.remove('faq-item_active');
+                    content.style.height = '0px';
+                });
+            } else {
+                item.classList.add('faq-item_active');
+                content.style.height = `${content.scrollHeight}px`;
+
+                const onTransitionEnd = (event) => {
+                    if (event.propertyName === 'height' && item.classList.contains('faq-item_active')) {
+                        content.style.height = 'auto';
+                    }
+                    content.removeEventListener('transitionend', onTransitionEnd);
+                };
+
+                content.addEventListener('transitionend', onTransitionEnd);
+            }
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        faqItems.forEach((item) => {
+            const content = item.querySelector('.faq-item__content');
+            if (!content) return;
+
+            if (item.classList.contains('faq-item_active')) {
+                content.style.height = 'auto';
+            } else {
+                content.style.height = '0px';
+            }
+        });
+    });
+}
+
+
+
+
+
+
+const burger = document.querySelector('.header__burger');
+const mobileMenu = document.querySelector('.mobile-menu');
+const mobileMenuClose = document.querySelector('.mobile-menu__close');
+const mobileMenuLinks = document.querySelectorAll('.mobile-menu__link');
+
+if (burger && mobileMenu && mobileMenuClose) {
+    const openMenu = () => {
+        mobileMenu.classList.add('active');
+        document.body.classList.add('menu-open');
+    };
+
+    const closeMenu = () => {
+        mobileMenu.classList.remove('active');
+        document.body.classList.remove('menu-open');
+    };
+
+    burger.addEventListener('click', openMenu);
+    mobileMenuClose.addEventListener('click', closeMenu);
+
+    mobileMenuLinks.forEach((link) => {
         link.addEventListener('click', closeMenu);
     });
 
-
-    // =========================================
-    // FAQ ACCORDION
-    // =========================================
-
-    const faqItems = document.querySelectorAll('.faq-item');
-
-    faqItems.forEach(item => {
-        const header = item.querySelector('.faq-item__header');
-
-        header?.addEventListener('click', () => {
-            const isActive = item.classList.contains('faq-item_active');
-
-            // Закрываем все
-            faqItems.forEach(el => {
-                el.classList.remove('faq-item_active');
-                el.querySelector('.faq-item__header')
-                    ?.setAttribute('aria-expanded', 'false');
-            });
-
-            // Открываем кликнутый если не был открыт
-            if (!isActive) {
-                item.classList.add('faq-item_active');
-                header.setAttribute('aria-expanded', 'true');
-            }
-        });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeMenu();
+        }
     });
+}
 
 
-    // =========================================
-    // PORTFOLIO SLIDER
-    // =========================================
 
-    const portfolioTrack = document.querySelector('.portfolio__track');
-    const portfolioCards = portfolioTrack?.querySelectorAll('.portfolio-card');
-    const portfolioPrev = document.querySelector('.portfolio__arrow_prev');
-    const portfolioNext = document.querySelector('.portfolio__arrow_next');
-    const portfolioNumber = document.querySelector('.portfolio__pagination-number');
-    const portfolioProgress = document.querySelector('.portfolio__pagination-progress');
-
-    if (portfolioTrack && portfolioCards?.length) {
-        let portfolioCurrent = 0;
-        const portfolioTotal = portfolioCards.length;
-        const portfolioVisible = () => window.innerWidth <= 1024 ? 2 : 3;
-
-        function portfolioUpdate() {
-            const visible = portfolioVisible();
-            const maxIndex = portfolioTotal - visible;
-            portfolioCurrent = Math.min(portfolioCurrent, maxIndex);
-
-            const cardWidth = portfolioCards[0].offsetWidth + 16;
-            portfolioTrack.style.transform = `translateX(-${portfolioCurrent * cardWidth}px)`;
-            portfolioTrack.style.transition = 'transform 0.4s ease';
-
-            const current = portfolioCurrent + 1;
-            const pages = maxIndex + 1;
-            portfolioNumber && (portfolioNumber.textContent =
-                `${String(current).padStart(2, '0')}/${String(pages).padStart(2, '0')}`);
-
-            if (portfolioProgress) {
-                portfolioProgress.style.width = `${(current / pages) * 100}%`;
-            }
-        }
-
-        portfolioPrev?.addEventListener('click', () => {
-            if (portfolioCurrent > 0) portfolioCurrent--;
-            portfolioUpdate();
-        });
-
-        portfolioNext?.addEventListener('click', () => {
-            const maxIndex = portfolioTotal - portfolioVisible();
-            if (portfolioCurrent < maxIndex) portfolioCurrent++;
-            portfolioUpdate();
-        });
-
-        portfolioUpdate();
-        window.addEventListener('resize', portfolioUpdate);
-    }
-
-
-    // =========================================
-    // PARTNERS SLIDER
-    // =========================================
-
-    const partnersTrack = document.querySelector('.partners__track');
-    const partnersCards = partnersTrack?.querySelectorAll('.partners-card');
-    const partnersPrev = document.querySelector('.partners__arrow_prev');
-    const partnersNext = document.querySelector('.partners__arrow_next');
-    const partnersNumber = document.querySelector('.partners__pagination-number');
-    const partnersProgress = document.querySelector('.partners__pagination-progress');
-
-    if (partnersTrack && partnersCards?.length) {
-        let partnersCurrent = 0;
-        const partnersTotal = partnersCards.length;
-
-        function partnersUpdate() {
-            const cardWidth = partnersCards[0].offsetWidth + 16;
-            partnersTrack.style.transform = `translateX(-${partnersCurrent * cardWidth}px)`;
-            partnersTrack.style.transition = 'transform 0.4s ease';
-
-            const pages = partnersTotal;
-            const current = partnersCurrent + 1;
-            partnersNumber && (partnersNumber.textContent =
-                `${String(current).padStart(2, '0')}/${String(pages).padStart(2, '0')}`);
-
-            if (partnersProgress) {
-                partnersProgress.style.width = `${(current / pages) * 100}%`;
-            }
-        }
-
-        partnersPrev?.addEventListener('click', () => {
-            if (partnersCurrent > 0) partnersCurrent--;
-            partnersUpdate();
-        });
-
-        partnersNext?.addEventListener('click', () => {
-            if (partnersCurrent < partnersTotal - 1) partnersCurrent++;
-            partnersUpdate();
-        });
-
-        partnersUpdate();
-    }
-
-});
