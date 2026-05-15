@@ -5,21 +5,22 @@ const portfolioProgress = document.querySelector('.portfolio__pagination-progres
 const partnersNumber = document.querySelector('.partners__pagination-number');
 const partnersProgress = document.querySelector('.partners__pagination-progress');
 
-function getSlidesPerView(swiper) {
-    const slidesPerView = swiper.params.slidesPerView;
-    return typeof slidesPerView === 'number' && slidesPerView > 0 ? slidesPerView : 1;
+function getSlidesGroup(swiper) {
+    return swiper.params.slidesPerGroup || 1;
 }
 
 function getCurrentPage(swiper) {
-    const slidesPerView = getSlidesPerView(swiper);
-    return Math.min(Math.ceil((swiper.realIndex + 1) / slidesPerView), getTotalPages(swiper));
+    const slidesGroup = getSlidesGroup(swiper);
+    return Math.min(
+        Math.floor(swiper.activeIndex / slidesGroup) + 1,
+        getTotalPages(swiper)
+    );
 }
 
 function getTotalPages(swiper) {
-    const slidesPerView = getSlidesPerView(swiper);
-    return Math.max(1, Math.ceil(swiper.slides.length / slidesPerView));
+    const slidesGroup = getSlidesGroup(swiper);
+    return Math.max(1, Math.ceil(swiper.slides.length / slidesGroup));
 }
-
 function updatePortfolioPagination(swiper) {
     const current = getCurrentPage(swiper);
     const total = getTotalPages(swiper);
@@ -172,9 +173,6 @@ if (faqItems.length) {
         });
     });
 }
-
-
-
 
 
 
